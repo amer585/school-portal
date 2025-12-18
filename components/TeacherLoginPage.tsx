@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight, Loader2, GraduationCap, BookOpen } from 'lucide-react';
-import { SUBJECTS } from '../App';
+import { SUBJECTS } from '../src/types';
 
 interface TeacherLoginPageProps {
   onLoginSuccess: (subject: string) => void;
@@ -28,7 +28,7 @@ export const TeacherLoginPage: React.FC<TeacherLoginPageProps> = ({ onLoginSucce
   return (
     <div className="w-full flex justify-center items-center py-12 animate-in fade-in duration-500">
       <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-12 relative overflow-hidden backdrop-blur-sm bg-white/90">
-        
+
         {/* Decorative top accent - Purple for teachers to distinguish */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-600 to-indigo-500"></div>
 
@@ -80,21 +80,21 @@ export const TeacherLoginPage: React.FC<TeacherLoginPageProps> = ({ onLoginSucce
           </div>
 
           <div className="space-y-2">
-             <label className="block text-sm font-bold text-slate-500 mb-1">المادة التي تدرسها</label>
-             <div className="relative group">
-                 <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                    <BookOpen className="h-5 w-5 text-slate-400 group-focus-within:text-purple-500 transition-colors" />
-                 </div>
-                 <select 
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    className="block w-full pr-12 pl-4 py-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all text-lg font-medium appearance-none cursor-pointer"
-                 >
-                     {SUBJECTS.map(s => (
-                         <option key={s} value={s}>{s}</option>
-                     ))}
-                 </select>
-             </div>
+            <label className="block text-sm font-bold text-slate-500 mb-1">المادة التي تدرسها</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                <BookOpen className="h-5 w-5 text-slate-400 group-focus-within:text-purple-500 transition-colors" />
+              </div>
+              <select
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="block w-full pr-12 pl-4 py-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all text-lg font-medium appearance-none cursor-pointer"
+              >
+                {SUBJECTS.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <button
@@ -114,13 +114,13 @@ export const TeacherLoginPage: React.FC<TeacherLoginPageProps> = ({ onLoginSucce
         </form>
 
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <button 
-                type="button"
-                onClick={onBackToStudent}
-                className="text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm"
-            >
-                العودة لتسجيل دخول الطلاب
-            </button>
+          <button
+            type="button"
+            onClick={onBackToStudent}
+            className="text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm"
+          >
+            العودة لتسجيل دخول الطلاب
+          </button>
         </div>
       </div>
     </div>

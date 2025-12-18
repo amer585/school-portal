@@ -6,145 +6,15 @@ import { LoginPage } from './components/LoginPage';
 import { TeacherLoginPage } from './components/TeacherLoginPage';
 import { StudentDashboard } from './components/StudentDashboard';
 import { TeacherDashboard } from './components/TeacherDashboard';
-import { SchoolAssistant } from './components/SchoolAssistant'; 
-import { CheckCircle2, X, Bot, Trash2 } from 'lucide-react';
+import { supabase } from './src/lib/supabase';
+import { StudentData, Assessment, MonthlyExam, AttendanceRecord, Announcement, SUBJECTS, GRADES } from './src/types';
+import { CheckCircle2, X, Trash2, Loader2 } from 'lucide-react';
 
-// --- CONSTANTS ---
-export const SUBJECTS = [
-  "اللغة العربية",
-  "اللغة الإنجليزية",
-  "الرياضيات",
-  "العلوم",
-  "الدراسات الاجتماعية",
-  "التربية الدينية",
-  "الحاسب الآلي",
-  "التربية الفنية"
-] as const;
+// --- CONSTANTS REMOVED (Imported from types) ---
 
-export const GRADES = [
-  "الاول الإعدادي",
-  "الثاني الإعدادي",
-  "الثالث الإعدادي"
-] as const;
+// --- TYPES REMOVED (Imported from types) ---
 
-// --- TYPES ---
-export interface Assessment {
-  id: string;
-  subject: string; // Added subject
-  title: string;
-  score: number;
-  maxScore: number;
-  status: 'present' | 'absent' | 'excused' | 'late';
-  note?: string;
-  date?: string;
-}
-
-export interface MonthlyExam {
-  id: string;
-  subject: string;
-  score: number;
-  maxScore: number;
-  status: 'present' | 'absent' | 'excused';
-  note?: string;
-  date?: string;
-}
-
-export interface AttendanceRecord {
-  id: string;
-  date: string;
-  status: 'present' | 'absent' | 'late' | 'excused';
-  lessonName?: string;
-  note?: string;
-  lateTime?: string; // Time of arrival if late
-}
-
-export interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-  author: string;
-  importance: 'normal' | 'high';
-  targetGrade: string; // Added target grade
-}
-
-export interface StudentData {
-  id: string;
-  name: string;
-  grade: string;
-  weeklyAssessments: Assessment[];
-  monthlyExams: MonthlyExam[];
-  attendanceRecords: AttendanceRecord[];
-  announcements: Announcement[];
-}
-
-// --- MOCK DATA GENERATOR ---
-const generateWeeklyForSubjects = (weeksCount: number): Assessment[] => {
-  const assessments: Assessment[] = [];
-  
-  for (let w = 1; w <= weeksCount; w++) {
-    SUBJECTS.forEach((subj, sIdx) => {
-       assessments.push({
-        id: `w-${w}-${sIdx}`,
-        subject: subj,
-        title: `أسبوع ${w}`,
-        score: 8 + Math.floor(Math.random() * 3), // Random score 8-10
-        maxScore: 10,
-        status: Math.random() > 0.9 ? 'absent' : 'present', // 10% chance of absence
-        note: '',
-        date: new Date(Date.now() - (10 - w) * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-       });
-    });
-  }
-  return assessments;
-};
-
-const INITIAL_STUDENTS: StudentData[] = [
-  {
-    id: "12345678901234",
-    name: "أحمد محمد علي",
-    grade: "الاول الإعدادي",
-    weeklyAssessments: generateWeeklyForSubjects(8), // 8 weeks of data
-    monthlyExams: [
-      { id: 'm1', subject: "اللغة العربية", score: 42, maxScore: 50, status: 'present', date: '2023-10-15' },
-      { id: 'm2', subject: "اللغة الإنجليزية", score: 38, maxScore: 40, status: 'present', date: '2023-10-16' },
-      { id: 'm3', subject: "الرياضيات", score: 55, maxScore: 60, status: 'present', date: '2023-10-17' },
-      { id: 'm4', subject: "العلوم", score: 18, maxScore: 20, status: 'present', date: '2023-10-18' },
-    ],
-    attendanceRecords: [
-      { id: 'a1', date: '2023-10-01', status: 'present', lessonName: 'Introduction' },
-      { id: 'a2', date: '2023-10-02', status: 'absent', lessonName: 'Algebra Basics', note: 'مرضي' },
-      { id: 'a3', date: '2023-10-03', status: 'late', lessonName: 'Geometry', lateTime: '08:15' },
-    ],
-    announcements: [
-      { id: 'an1', title: 'موعد رحلة المدرسة', content: 'سيتم تنظيم رحلة إلى المتحف المصري يوم الخميس القادم. يرجى إحضار الموافقة.', date: '2023-10-20', author: 'أ. محمد', importance: 'normal', targetGrade: 'الكل' },
-      { id: 'an2', title: 'تنبيه هام', content: 'يرجى الالتزام بالزي المدرسي الكامل.', date: '2023-10-18', author: 'إدارة المدرسة', importance: 'high', targetGrade: 'الاول الإعدادي' }
-    ]
-  },
-  {
-    id: "98765432109876",
-    name: "سارة محمود حسن",
-    grade: "الاول الإعدادي",
-    weeklyAssessments: generateWeeklyForSubjects(8),
-    monthlyExams: [
-      { id: 'm5', subject: "اللغة العربية", score: 49, maxScore: 50, status: 'present', date: '2023-10-15' },
-      { id: 'm6', subject: "اللغة الإنجليزية", score: 40, maxScore: 40, status: 'present', date: '2023-10-16' },
-    ],
-    attendanceRecords: [],
-    announcements: []
-  },
-  {
-    id: "11223344556677",
-    name: "كريم عمر إبراهيم",
-    grade: "الثاني الإعدادي",
-    weeklyAssessments: generateWeeklyForSubjects(5),
-    monthlyExams: [
-      { id: 'm7', subject: "اللغة العربية", score: 35, maxScore: 50, status: 'present', date: '2023-10-15' },
-    ],
-    attendanceRecords: [],
-    announcements: []
-  }
-];
+// --- MOCK DATA REMOVED ---
 
 // Toast Component
 const Toast = ({ message, onClose, type = 'success' }: { message: string; onClose: () => void, type?: 'success' | 'info' | 'error' }) => (
@@ -155,7 +25,7 @@ const Toast = ({ message, onClose, type = 'success' }: { message: string; onClos
       ${type === 'info' ? 'bg-blue-600/90 text-white border-blue-500' : ''}
     `}>
       <div className={`rounded-full p-1 ${type === 'success' ? 'bg-green-500' : 'bg-white/20'}`}>
-        {type === 'success' ? <CheckCircle2 className="w-3 h-3 text-white" /> : <Bot className="w-3 h-3 text-white" />}
+        <CheckCircle2 className="w-3 h-3 text-white" />
       </div>
       <span className="font-medium text-sm">{message}</span>
       <button onClick={onClose} className="opacity-70 hover:opacity-100 ml-2 transition-opacity">
@@ -170,13 +40,13 @@ const DynamicBackground = React.memo(({ isDarkMode }: { isDarkMode: boolean }) =
   <div className="fixed inset-0 -z-50 overflow-hidden pointer-events-none transition-colors duration-700 bg-slate-50 dark:bg-slate-950">
     {/* Light Mode Grid */}
     <div className={`absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] transition-opacity duration-700 ${isDarkMode ? 'opacity-0' : 'opacity-100'}`}></div>
-    
+
     {/* Dark Mode Stars */}
     <div className={`absolute inset-0 transition-opacity duration-700 ${isDarkMode ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="absolute w-1 h-1 bg-white rounded-full top-1/4 left-1/4 animate-pulse"></div>
-        <div className="absolute w-1.5 h-1.5 bg-blue-400 rounded-full top-3/4 right-1/3 animate-pulse" style={{animationDelay: '1s'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full top-10 right-10 opacity-50"></div>
-        <div className="absolute w-1 h-1 bg-indigo-300 rounded-full bottom-20 left-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+      <div className="absolute w-1 h-1 bg-white rounded-full top-1/4 left-1/4 animate-pulse"></div>
+      <div className="absolute w-1.5 h-1.5 bg-blue-400 rounded-full top-3/4 right-1/3 animate-pulse" style={{ animationDelay: '1s' }}></div>
+      <div className="absolute w-1 h-1 bg-white rounded-full top-10 right-10 opacity-50"></div>
+      <div className="absolute w-1 h-1 bg-indigo-300 rounded-full bottom-20 left-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
     </div>
 
     {/* Moving Blobs (Optimized with will-change and transform-gpu) */}
@@ -190,77 +60,87 @@ export default function App() {
   // Theme State with persistence
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('theme');
-        return saved === 'dark';
+      const saved = localStorage.getItem('theme');
+      return saved === 'dark';
     }
     return false;
   });
 
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'teacher-login' | 'dashboard' | 'teacher-dashboard'>('landing');
-  
+
   // Teacher Session State
   const [teacherSubject, setTeacherSubject] = useState<string>('الرياضيات');
 
-  // --- HISTORY & PERSISTENCE ---
-  const [history, setHistory] = useState<StudentData[][]>(() => {
-    const saved = localStorage.getItem('madrasatuna_data');
-    return saved ? [JSON.parse(saved)] : [INITIAL_STUDENTS];
-  });
-  const [historyIndex, setHistoryIndex] = useState(0);
+  // --- HISTORY & PERSISTENCE REMOVED FOR SUPABASE MIGRATION ---
+  // We will now use direct Supabase state
+  const [students, setStudents] = useState<StudentData[]>([]);
+  const [loading, setLoading] = useState(false); // Start with false so app shows immediately
 
-  const students = history[historyIndex];
+  // Fetch Students from Supabase
+  const fetchStudents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .select(`
+              *,
+              weeklyAssessments:assessments(*),
+              monthlyExams:monthly_exams(*),
+              attendanceRecords:attendance_records(*)
+          `);
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedData: StudentData[] = data.map((s: any) => ({
+          id: s.id,
+          national_id: s.national_id,
+          name: s.name,
+          grade: s.grade,
+          weeklyAssessments: s.weeklyAssessments || [],
+          monthlyExams: s.monthlyExams || [],
+          attendanceRecords: s.attendanceRecords || [],
+          announcements: []
+        }));
+
+        // Fetch global announcements separately
+        try {
+          const { data: annData } = await supabase.from('announcements').select('*');
+          if (annData) {
+            mappedData.forEach(s => s.announcements = annData as any);
+          }
+        } catch {
+          // Ignore announcement fetch errors
+        }
+
+        setStudents(mappedData);
+      }
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      // App will still work, just with empty data
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
+
 
   // Theme Effect: Apply class to <html>
   useEffect(() => {
     if (isDarkMode) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
-  // Debounced Local Storage Saving
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      localStorage.setItem('madrasatuna_data', JSON.stringify(students));
-    }, 1000); 
-
-    return () => clearTimeout(timeoutId);
-  }, [students]);
-
-  const setStudents = useCallback((newStudentsOrUpdater: StudentData[] | ((prev: StudentData[]) => StudentData[])) => {
-    setHistory(prevHistory => {
-      const current = prevHistory[historyIndex];
-      const newStudents = typeof newStudentsOrUpdater === 'function' 
-        ? newStudentsOrUpdater(current) 
-        : newStudentsOrUpdater;
-      
-      if (JSON.stringify(current) === JSON.stringify(newStudents)) return prevHistory;
-
-      const newHistory = prevHistory.slice(0, historyIndex + 1);
-      newHistory.push(newStudents);
-      if (newHistory.length > 50) newHistory.shift();
-      return newHistory;
-    });
-    setHistoryIndex(prev => {
-        const nextIndex = prev + 1;
-        return nextIndex > 50 ? 50 : nextIndex; 
-    });
-  }, [historyIndex]);
-
-  const undo = useCallback(() => {
-    setHistoryIndex(prev => Math.max(0, prev - 1));
-  }, []);
-
-  const redo = useCallback(() => {
-    setHistoryIndex(prev => Math.min(history.length - 1, prev + 1));
-  }, [history.length]);
-
   const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{msg: string, type?: 'success' | 'info' | 'error'} | null>(null);
-  const [showAiChat, setShowAiChat] = useState(false);
+  const [toast, setToast] = useState<{ msg: string, type?: 'success' | 'info' | 'error' } | null>(null);
 
   const triggerToast = (msg: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -271,53 +151,89 @@ export default function App() {
     setIsDarkMode(prev => !prev);
   };
 
-  const handleUpdateStudent = useCallback((id: string, data: Partial<StudentData>) => {
+  const handleUpdateStudent = useCallback(async (id: string, data: Partial<StudentData>) => {
+    // OPTIMISTIC UPDATE
     setStudents(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
-  }, [setStudents]);
 
-  const handleDeleteStudent = useCallback((id: string) => {
-    setStudents(prev => prev.filter(s => s.id !== id));
-    triggerToast("تم حذف سجل الطالب بنجاح", 'info');
-  }, [setStudents]);
-  
-  const handleBulkUpdate = useCallback((updates: {id: string, data: Partial<StudentData>}[]) => {
-      setStudents(prev => {
-          const map = new Map<string, StudentData>();
-          prev.forEach(s => map.set(s.id, s));
+    try {
+      // Identify what to update. If it's basic details:
+      const { error } = await supabase.from('students').update({
+        name: data.name,
+        grade: data.grade,
+        // national_id: data.national_id // Usually don't update ID casually
+      }).eq('id', id);
 
-          updates.forEach(u => {
-              const s = map.get(u.id);
-              if (s) map.set(u.id, { ...s, ...u.data });
-          });
-          return Array.from(map.values());
-      });
-  }, [setStudents]);
+      if (error) throw error;
+      triggerToast('تم تحديث البيانات بنجاح', 'success');
+    } catch (err) {
+      console.error(err);
+      triggerToast('حدث خطأ أثناء التحديث', 'error');
+      fetchStudents(); // Revert
+    }
+  }, [fetchStudents]);
+
+  const handleDeleteStudent = useCallback(async (id: string) => {
+    const confirm = window.confirm("هل أنت متأكد من حذف هذا الطالب؟");
+    if (!confirm) return;
+
+    setStudents(prev => prev.filter(s => s.id !== id)); // Optimistic
+    try {
+      const { error } = await supabase.from('students').delete().eq('id', id);
+      if (error) throw error;
+      triggerToast("تم حذف سجل الطالب بنجاح", 'info');
+    } catch (err) {
+      console.error(err);
+      triggerToast("فشل الحذف", 'error');
+      fetchStudents();
+    }
+  }, [fetchStudents]);
+
+  const handleBulkUpdate = useCallback(async (updates: { id: string, data: Partial<StudentData> }[]) => {
+    // Complex to do bulk updates in one go without a custom RPC or looping
+    // For demo, we loop (not efficient but checking logic)
+    for (const update of updates) {
+      await handleUpdateStudent(update.id, update.data);
+    }
+  }, [handleUpdateStudent]);
 
   const handleStartJourney = () => {
     setCurrentView('login');
   };
 
-  const handleStudentLoginSuccess = (id: string) => {
-    const exists = students.find(s => s.id === id);
+  const handleStudentLoginSuccess = (nationalId: string) => {
+    // In our new schema, we check by national_id
+    // The Login page usually passes the ID entered.
+    const exists = students.find(s => s.national_id === nationalId);
     if (exists) {
-      setCurrentStudentId(id);
-      // Show grade on login
+      setCurrentStudentId(exists.id);
       triggerToast(`مرحباً بك، ${exists.name}! أنت في ${exists.grade}`, 'info');
     } else {
-      const newStudent: StudentData = {
-        id: id,
-        name: "طالب جديد (تجريبي)",
-        grade: "الاول الإعدادي", // Default
-        weeklyAssessments: generateWeeklyForSubjects(2), // Give some starter data
-        monthlyExams: [],
-        attendanceRecords: [],
-        announcements: []
-      };
-      setStudents(prev => [...prev, newStudent]);
-      setCurrentStudentId(id);
-      triggerToast(`مرحباً بك! تم إنشاء ملف جديد.`, 'info');
+      triggerToast(`عذراً، هذا الرقم القومي غير مسجل.`, 'error');
+      // Ensure we stay on login or handle error
+      return;
     }
     setCurrentView('dashboard');
+  };
+
+  // Create New Student (Teacher Action usually, but logic here for now)
+  const createStudent = async (nationalId: string, name: string, grade: string) => {
+    try {
+      const { data, error } = await supabase.from('students').insert({
+        national_id: nationalId,
+        name,
+        grade
+      }).select().single();
+
+      if (error) throw error;
+      if (data) {
+        await fetchStudents(); // Refresh
+        triggerToast('تم إضافة الطالب بنجاح', 'success');
+        return data.id;
+      }
+    } catch (err: any) {
+      triggerToast(`فشل الإضافة: ${err.message}`, 'error');
+    }
+    return null;
   };
 
   const handleTeacherLoginClick = () => {
@@ -336,99 +252,68 @@ export default function App() {
     setCurrentStudentId(null);
   };
 
-  const currentStudent = students.find(s => s.id === currentStudentId) || students[0];
+  const currentStudent = students.find(s => s.id === currentStudentId) || null;
 
   return (
     <div className={`min-h-screen flex flex-col font-sans relative text-slate-900 dark:text-slate-100`}>
-      
+
       <DynamicBackground isDarkMode={isDarkMode} />
 
-      <Header 
-        isDarkMode={isDarkMode} 
-        toggleTheme={toggleTheme} 
-        isLoggedIn={currentView === 'dashboard' || currentView === 'teacher-dashboard'} 
-        onLogout={handleLogout} 
+      <Header
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
+        isLoggedIn={currentView === 'dashboard' || currentView === 'teacher-dashboard'}
+        onLogout={handleLogout}
       />
-      
+
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
       <main className="flex-grow flex flex-col relative isolate">
         <div className="w-full max-w-[1400px] mx-auto px-4 md:px-6 py-6 md:py-8 flex-grow flex flex-col">
+          {loading && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+              <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+            </div>
+          )}
           {currentView === 'landing' && <Hero onLogin={handleStartJourney} />}
-          
+
           {currentView === 'login' && (
-            <LoginPage 
-              onLoginSuccess={handleStudentLoginSuccess} 
+            <LoginPage
+              onLoginSuccess={handleStudentLoginSuccess}
               onTeacherLoginClick={handleTeacherLoginClick}
               onBack={() => setCurrentView('landing')}
             />
           )}
-          
+
           {currentView === 'teacher-login' && (
-            <TeacherLoginPage 
-              onLoginSuccess={handleTeacherLoginSuccess} 
+            <TeacherLoginPage
+              onLoginSuccess={handleTeacherLoginSuccess}
               onBackToStudent={() => setCurrentView('login')}
             />
           )}
 
-          {currentView === 'dashboard' && (
-            <StudentDashboard 
-              student={currentStudent} 
-              onLogout={handleLogout} 
+          {currentView === 'dashboard' && currentStudent && (
+            <StudentDashboard
+              student={currentStudent}
+              onLogout={handleLogout}
             />
           )}
 
           {currentView === 'teacher-dashboard' && (
-            <TeacherDashboard 
-              students={students} 
+            <TeacherDashboard
+              students={students}
               teacherSubject={teacherSubject}
               onUpdateStudent={handleUpdateStudent}
               onBulkUpdate={handleBulkUpdate}
               onDeleteStudent={handleDeleteStudent}
-              onLogout={handleLogout} 
+              onLogout={handleLogout}
               triggerToast={triggerToast}
-              undo={undo}
-              redo={redo}
-              canUndo={historyIndex > 0}
-              canRedo={historyIndex < history.length - 1}
             />
           )}
         </div>
       </main>
 
-      {/* Floating AI Assistant Button */}
-      <div className="fixed bottom-6 right-6 z-[90]">
-        {!showAiChat && (
-          <button 
-            onClick={() => setShowAiChat(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all flex items-center justify-center group border-2 border-white/20"
-          >
-            <Bot className="w-6 h-6 animate-bounce" />
-            <span className="absolute right-full mr-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              مساعدك الذكي
-            </span>
-          </button>
-        )}
-      </div>
 
-      {/* Chat Modal */}
-      {showAiChat && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:justify-end sm:p-6 pointer-events-none">
-          <div className="w-full sm:w-[400px] h-[600px] max-h-[80vh] pointer-events-auto bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-300">
-             <div className="bg-slate-50 dark:bg-slate-950 p-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-blue-600 dark:text-blue-400" /> المساعد الذكي
-                </span>
-                <button onClick={() => setShowAiChat(false)} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
-                    <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                </button>
-             </div>
-             <div className="flex-1 overflow-hidden relative">
-                 <SchoolAssistant />
-             </div>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>
