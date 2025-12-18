@@ -6,7 +6,8 @@ import { LoginPage } from './components/LoginPage';
 import { StudentDashboard } from './components/StudentDashboard';
 import { supabase } from './src/lib/supabase';
 import { StudentData, Assessment, MonthlyExam, AttendanceRecord, Announcement, SUBJECTS, GRADES } from './src/types';
-import { CheckCircle2, X, Trash2, Loader2 } from 'lucide-react';
+import { CheckCircle2, X, Trash2, Loader2, Download, Monitor, Smartphone } from 'lucide-react';
+import { HelpModal } from './components/HelpModal';
 
 // --- CONSTANTS REMOVED (Imported from types) ---
 
@@ -241,7 +242,7 @@ export default function App() {
 
   const currentStudent = students.find(s => s.id === currentStudentId) || null;
 
-  import { HelpModal } from './components/HelpModal';
+
 
   // PWA Install Logic
   const [installPrompt, setInstallPrompt] = useState<any>(null);
