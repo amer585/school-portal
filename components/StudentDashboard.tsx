@@ -282,7 +282,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ student, onL
                                                                 </div>
                                                             </div>
                                                         ))}
-                                                        {subjectWeekly.length === 0 && <div className="text-center py-6 text-slate-400 text-xs">لا توجد بيانات</div>}
+                                                        {subjectWeekly.length === 0 && (
+                                                            <div className="space-y-3 opacity-40 grayscale">
+                                                                {[1, 2, 3].map(i => (
+                                                                    <div key={i} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                                                        <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                                                                        <div className="h-4 w-8 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+                                                                    </div>
+                                                                ))}
+                                                                <div className="text-center text-[10px] text-slate-400 font-bold mt-2">لا توجد تقييمات مسجلة بعد</div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -313,7 +323,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ student, onL
                                                                 </div>
                                                             </div>
                                                         ))}
-                                                        {subjectMonthly.length === 0 && <div className="text-center py-6 text-slate-400 text-xs">لا توجد بيانات</div>}
+                                                        {subjectMonthly.length === 0 && (
+                                                            <div className="space-y-3 opacity-40 grayscale">
+                                                                {[1, 2].map(i => (
+                                                                    <div key={i} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                                                        <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                                                                        <div className="h-4 w-8 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+                                                                    </div>
+                                                                ))}
+                                                                <div className="text-center text-[10px] text-slate-400 font-bold mt-2">لا توجد امتحانات مسجلة بعد</div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
