@@ -59,12 +59,12 @@ export interface Announcement {
 }
 
 export interface StudentData {
-    id: string; // Internal UUID
-    national_id: string; // The login ID
+    id: string; // The login ID (National ID)
     name: string;
     grade: string;
-    weeklyAssessments?: Assessment[];
-    monthlyExams?: MonthlyExam[];
-    attendanceRecords?: AttendanceRecord[];
-    announcements?: Announcement[];
+    weeklyAssessments: Assessment[];
+    monthlyExams: MonthlyExam[];
+    attendanceRecords: AttendanceRecord[];
+    announcements: Announcement[];
+    _uuid?: string; // Internal Supabase ID
 }

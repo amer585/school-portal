@@ -3,6 +3,7 @@ import { CreditCard, ArrowRight, Loader2, UserCog, ArrowLeft } from 'lucide-reac
 
 interface LoginPageProps {
   onLoginSuccess: (id: string) => void;
+
   onBack?: () => void;
 }
 
@@ -86,11 +87,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) 
 
 
 
-        <div className="mt-2 text-center">
-          <p className="text-sm text-slate-400 dark:text-slate-500">
-            تأكد من كتابة الرقم بشكل صحيح من شهادة الميلاد
-          </p>
-        </div>
+
+
       </div>
     </div>
   );

@@ -3,16 +3,150 @@ import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { Footer } from './components/Footer';
 import { LoginPage } from './components/LoginPage';
+import { TeacherLoginPage } from './components/TeacherLoginPage';
 import { StudentDashboard } from './components/StudentDashboard';
+import { TeacherDashboard } from './components/TeacherDashboard';
+
+import { CheckCircle2, X, Bot, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from './src/lib/supabase';
-import { StudentData, Assessment, MonthlyExam, AttendanceRecord, Announcement, SUBJECTS, GRADES } from './src/types';
-import { CheckCircle2, X, Loader2 } from 'lucide-react';
 
-// --- CONSTANTS REMOVED (Imported from types) ---
+// --- CONSTANTS ---
+export const SUBJECTS = [
+  "اللغة العربية",
+  "اللغة الإنجليزية",
+  "الرياضيات",
+  "العلوم",
+  "الدراسات الاجتماعية",
+  "التربية الدينية",
+  "الحاسب الآلي",
+  "التربية الفنية"
+] as const;
 
-// --- TYPES REMOVED (Imported from types) ---
+export const GRADES = [
+  "الاول الإعدادي",
+  "الثاني الإعدادي",
+  "الثالث الإعدادي"
+] as const;
 
-// --- MOCK DATA REMOVED ---
+// --- TYPES ---
+export interface Assessment {
+  id: string;
+  subject: string; // Added subject
+  title: string;
+  score: number;
+  maxScore: number;
+  status: 'present' | 'absent' | 'excused' | 'late';
+  note?: string;
+  date?: string;
+}
+
+export interface MonthlyExam {
+  id: string;
+  subject: string;
+  score: number;
+  maxScore: number;
+  status: 'present' | 'absent' | 'excused';
+  note?: string;
+  date?: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  date: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  lessonName?: string;
+  note?: string;
+  lateTime?: string; // Time of arrival if late
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  author: string;
+  importance: 'normal' | 'high';
+  targetGrade: string; // Added target grade
+}
+
+export interface StudentData {
+  id: string;
+  name: string;
+  grade: string;
+  weeklyAssessments: Assessment[];
+  monthlyExams: MonthlyExam[];
+  attendanceRecords: AttendanceRecord[];
+  announcements: Announcement[];
+  _uuid?: string; // Internal Supabase ID
+}
+
+// --- MOCK DATA GENERATOR ---
+const generateWeeklyForSubjects = (weeksCount: number): Assessment[] => {
+  const assessments: Assessment[] = [];
+
+  for (let w = 1; w <= weeksCount; w++) {
+    SUBJECTS.forEach((subj, sIdx) => {
+      assessments.push({
+        id: `w-${w}-${sIdx}`,
+        subject: subj,
+        title: `أسبوع ${w}`,
+        score: 8 + Math.floor(Math.random() * 3), // Random score 8-10
+        maxScore: 10,
+        status: Math.random() > 0.9 ? 'absent' : 'present', // 10% chance of absence
+        note: '',
+        date: new Date(Date.now() - (10 - w) * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      });
+    });
+  }
+  return assessments;
+};
+
+const INITIAL_STUDENTS: StudentData[] = [
+  {
+    id: "12345678901234",
+    name: "أحمد محمد علي",
+    grade: "الاول الإعدادي",
+    weeklyAssessments: generateWeeklyForSubjects(8), // 8 weeks of data
+    monthlyExams: [
+      { id: 'm1', subject: "اللغة العربية", score: 42, maxScore: 50, status: 'present', date: '2023-10-15' },
+      { id: 'm2', subject: "اللغة الإنجليزية", score: 38, maxScore: 40, status: 'present', date: '2023-10-16' },
+      { id: 'm3', subject: "الرياضيات", score: 55, maxScore: 60, status: 'present', date: '2023-10-17' },
+      { id: 'm4', subject: "العلوم", score: 18, maxScore: 20, status: 'present', date: '2023-10-18' },
+    ],
+    attendanceRecords: [
+      { id: 'a1', date: '2023-10-01', status: 'present', lessonName: 'Introduction' },
+      { id: 'a2', date: '2023-10-02', status: 'absent', lessonName: 'Algebra Basics', note: 'مرضي' },
+      { id: 'a3', date: '2023-10-03', status: 'late', lessonName: 'Geometry', lateTime: '08:15' },
+    ],
+    announcements: [
+      { id: 'an1', title: 'موعد رحلة المدرسة', content: 'سيتم تنظيم رحلة إلى المتحف المصري يوم الخميس القادم. يرجى إحضار الموافقة.', date: '2023-10-20', author: 'أ. محمد', importance: 'normal', targetGrade: 'الكل' },
+      { id: 'an2', title: 'تنبيه هام', content: 'يرجى الالتزام بالزي المدرسي الكامل.', date: '2023-10-18', author: 'إدارة المدرسة', importance: 'high', targetGrade: 'الاول الإعدادي' }
+    ]
+  },
+  {
+    id: "98765432109876",
+    name: "سارة محمود حسن",
+    grade: "الاول الإعدادي",
+    weeklyAssessments: generateWeeklyForSubjects(8),
+    monthlyExams: [
+      { id: 'm5', subject: "اللغة العربية", score: 49, maxScore: 50, status: 'present', date: '2023-10-15' },
+      { id: 'm6', subject: "اللغة الإنجليزية", score: 40, maxScore: 40, status: 'present', date: '2023-10-16' },
+    ],
+    attendanceRecords: [],
+    announcements: []
+  },
+  {
+    id: "11223344556677",
+    name: "كريم عمر إبراهيم",
+    grade: "الثاني الإعدادي",
+    weeklyAssessments: generateWeeklyForSubjects(5),
+    monthlyExams: [
+      { id: 'm7', subject: "اللغة العربية", score: 35, maxScore: 50, status: 'present', date: '2023-10-15' },
+    ],
+    attendanceRecords: [],
+    announcements: []
+  }
+];
 
 // Toast Component
 const Toast = ({ message, onClose, type = 'success' }: { message: string; onClose: () => void, type?: 'success' | 'info' | 'error' }) => (
@@ -23,7 +157,7 @@ const Toast = ({ message, onClose, type = 'success' }: { message: string; onClos
       ${type === 'info' ? 'bg-blue-600/90 text-white border-blue-500' : ''}
     `}>
       <div className={`rounded-full p-1 ${type === 'success' ? 'bg-green-500' : 'bg-white/20'}`}>
-        <CheckCircle2 className="w-3 h-3 text-white" />
+        {type === 'success' ? <CheckCircle2 className="w-3 h-3 text-white" /> : <Bot className="w-3 h-3 text-white" />}
       </div>
       <span className="font-medium text-sm">{message}</span>
       <button onClick={onClose} className="opacity-70 hover:opacity-100 ml-2 transition-opacity">
@@ -37,13 +171,7 @@ const Toast = ({ message, onClose, type = 'success' }: { message: string; onClos
 const DynamicBackground = React.memo(({ isDarkMode }: { isDarkMode: boolean }) => (
   <div className="fixed inset-0 -z-50 overflow-hidden pointer-events-none transition-colors duration-700 bg-slate-50 dark:bg-slate-950">
     {/* Light Mode Grid */}
-    <div
-      className={`absolute inset-0 transition-opacity duration-700 ${isDarkMode ? 'opacity-0' : 'opacity-100'}`}
-      style={{
-        backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
-        backgroundSize: '24px 24px'
-      }}
-    ></div>
+    <div className={`absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] transition-opacity duration-700 ${isDarkMode ? 'opacity-0' : 'opacity-100'}`}></div>
 
     {/* Dark Mode Stars */}
     <div className={`absolute inset-0 transition-opacity duration-700 ${isDarkMode ? 'opacity-100' : 'opacity-0'}`}>
@@ -70,64 +198,128 @@ export default function App() {
     return false;
   });
 
-  const [currentView, setCurrentView] = useState<'landing' | 'login' | 'dashboard'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'login' | 'teacher-login' | 'dashboard' | 'teacher-dashboard'>('landing');
 
-  // --- HISTORY & PERSISTENCE REMOVED FOR SUPABASE MIGRATION ---
-  // We will now use direct Supabase state
-  const [students, setStudents] = useState<StudentData[]>([]);
-  const [loading, setLoading] = useState(false); // Start with false so app shows immediately
+  // Auto-route based on URL or Hash
+  useEffect(() => {
+    const isTeacherUrl = window.location.pathname.includes('teacher-portal') || window.location.hash === '#teacher';
+    const isStudentUrl = window.location.hash === '#student';
 
-  // Fetch Students from Supabase
-  const fetchStudents = useCallback(async () => {
+    if (isTeacherUrl) {
+      setCurrentView('teacher-login');
+    } else if (isStudentUrl) {
+      setCurrentView('login');
+    }
+  }, []);
+
+  // Teacher Session State
+  const [teacherSubject, setTeacherSubject] = useState<string>('الرياضيات');
+
+  // --- STATE ---
+  const [loading, setLoading] = useState(true);
+  // We keep history for session-based undo/redo, but initialization is now async
+  const [history, setHistory] = useState<StudentData[][]>([[]]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  const students = history[historyIndex];
+
+  // --- SUPABASE FETCHING ---
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('students')
-        .select(`
-              *,
-              weeklyAssessments:assessments(*),
-              monthlyExams:monthly_exams(*),
-              attendanceRecords:attendance_records(*)
-          `);
+      // Fetch core tables
+      const { data: studentsData, error: studentError } = await supabase.from('students').select('*');
+      const { data: assessmentsData, error: assessError } = await supabase.from('assessments').select('*');
+      const { data: examsData, error: examError } = await supabase.from('monthly_exams').select('*');
+      const { data: attendanceData, error: attError } = await supabase.from('attendance_records').select('*');
+      const { data: announcementsData, error: annError } = await supabase.from('announcements').select('*');
 
-      if (error) throw error;
+      if (studentError) throw studentError;
+      if (assessError) throw assessError;
+      if (examError) throw examError;
+      if (attError) throw attError;
+      if (annError) throw annError;
 
-      if (data) {
-        const mappedData: StudentData[] = data.map((s: any) => ({
-          id: s.id,
-          national_id: s.national_id,
-          name: s.name,
-          grade: s.grade,
-          weeklyAssessments: s.weeklyAssessments || [],
-          monthlyExams: s.monthlyExams || [],
-          attendanceRecords: s.attendanceRecords || [],
-          announcements: []
-        }));
+      // Map relational data to nested StudentData structure
+      const mappedStudents: StudentData[] = (studentsData || []).map(student => {
+        // Find related data
+        const studentAssessments = (assessmentsData || [])
+          .filter(a => a.student_id === student.id)
+          .map(a => ({
+            id: a.id,
+            subject: a.subject,
+            title: a.title,
+            score: Number(a.score),
+            maxScore: Number(a.max_score),
+            status: a.status as any,
+            note: a.note,
+            date: a.date
+          }));
 
-        // Fetch global announcements separately
-        try {
-          const { data: annData } = await supabase.from('announcements').select('*');
-          if (annData) {
-            mappedData.forEach(s => s.announcements = annData as any);
-          }
-        } catch {
-          // Ignore announcement fetch errors
-        }
+        const studentExams = (examsData || [])
+          .filter(e => e.student_id === student.id)
+          .map(e => ({
+            id: e.id,
+            subject: e.subject,
+            score: Number(e.score),
+            maxScore: Number(e.max_score),
+            status: e.status as any,
+            note: e.note,
+            date: e.date
+          }));
 
-        setStudents(mappedData);
-      }
+        const studentAttendance = (attendanceData || [])
+          .filter(a => a.student_id === student.id)
+          .map(a => ({
+            id: a.id,
+            date: a.date,
+            status: a.status as any,
+            lessonName: a.lesson_name,
+            note: a.note,
+            lateTime: a.late_time
+          }));
+
+        // Announcements are global but filtered by grade usually, or 'all'. 
+        // Here we just attach relevant ones.
+        const relevantAnnouncements = (announcementsData || [])
+          .filter(a => a.target_grade === 'الكل' || a.target_grade === student.grade)
+          .map(a => ({
+            id: a.id,
+            title: a.title,
+            content: a.content,
+            date: a.date,
+            author: a.author,
+            importance: a.importance as any,
+            targetGrade: a.target_grade
+          }));
+
+        return {
+          id: student.national_id, // We use national_id as the App's ID for simplicity based on existing data
+          _uuid: student.id, // Keep internal UUID
+          name: student.name,
+          grade: student.grade,
+          weeklyAssessments: studentAssessments,
+          monthlyExams: studentExams,
+          attendanceRecords: studentAttendance,
+          announcements: relevantAnnouncements
+        };
+      });
+
+      setHistory([mappedStudents]);
+      setHistoryIndex(0);
     } catch (err: any) {
       console.error('Error fetching data:', err);
-      // App will still work, just with empty data
+      // Fallback to local storage or mock if critical failure (optional)
+      // triggerToast(`خطأ في تحميل البيانات: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // UseEffect to fetch on mount
   useEffect(() => {
-    fetchStudents();
-  }, [fetchStudents]);
-
+    fetchData();
+  }, [fetchData]);
 
   // Theme Effect: Apply class to <html>
   useEffect(() => {
@@ -139,6 +331,37 @@ export default function App() {
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
+
+  // No longer syncing to localStorage continuously
+  // useEffect(() => { ... }, [students]);
+
+  const setStudents = useCallback((newStudentsOrUpdater: StudentData[] | ((prev: StudentData[]) => StudentData[])) => {
+    setHistory(prevHistory => {
+      const current = prevHistory[historyIndex];
+      const newStudents = typeof newStudentsOrUpdater === 'function'
+        ? newStudentsOrUpdater(current)
+        : newStudentsOrUpdater;
+
+      if (JSON.stringify(current) === JSON.stringify(newStudents)) return prevHistory;
+
+      const newHistory = prevHistory.slice(0, historyIndex + 1);
+      newHistory.push(newStudents);
+      if (newHistory.length > 50) newHistory.shift();
+      return newHistory;
+    });
+    setHistoryIndex(prev => {
+      const nextIndex = prev + 1;
+      return nextIndex > 50 ? 50 : nextIndex;
+    });
+  }, [historyIndex]);
+
+  const undo = useCallback(() => {
+    setHistoryIndex(prev => Math.max(0, prev - 1));
+  }, []);
+
+  const redo = useCallback(() => {
+    setHistoryIndex(prev => Math.min(history.length - 1, prev + 1));
+  }, [history.length]);
 
   const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string, type?: 'success' | 'info' | 'error' } | null>(null);
@@ -152,48 +375,138 @@ export default function App() {
     setIsDarkMode(prev => !prev);
   };
 
-  const handleUpdateStudent = useCallback(async (id: string, data: Partial<StudentData>) => {
-    // OPTIMISTIC UPDATE
-    setStudents(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
+  // --- SUPABASE WRITES ---
 
-    try {
-      // Identify what to update. If it's basic details:
-      const { error } = await supabase.from('students').update({
-        name: data.name,
-        grade: data.grade,
-        // national_id: data.national_id // Usually don't update ID casually
-      }).eq('id', id);
-
-      if (error) throw error;
-      triggerToast('تم تحديث البيانات بنجاح', 'success');
-    } catch (err) {
-      console.error(err);
-      triggerToast('حدث خطأ أثناء التحديث', 'error');
-      fetchStudents(); // Revert
+  const handleUpdateStudent = useCallback(async (nationalId: string, data: Partial<StudentData>) => {
+    // 1. Find the student's internal UUID
+    const student = students.find(s => s.id === nationalId);
+    if (!student || !student._uuid) {
+      console.error("Unknown student or missing UUID:", nationalId);
+      triggerToast("خطأ: تعذر العثور على سجل الطالب", 'error');
+      return;
     }
-  }, [fetchStudents]);
+    const studentUuid = student._uuid;
 
-  const handleDeleteStudent = useCallback(async (id: string) => {
-    const confirm = window.confirm("هل أنت متأكد من حذف هذا الطالب؟");
-    if (!confirm) return;
-
-    setStudents(prev => prev.filter(s => s.id !== id)); // Optimistic
+    setLoading(true);
     try {
-      const { error } = await supabase.from('students').delete().eq('id', id);
+      const promises = [];
+
+      // Update Assessments
+      if (data.weeklyAssessments) {
+        for (const item of data.weeklyAssessments) {
+          // Determine if we need to insert or update.
+          // If it's a new item generated locally without valid UUID, we omit ID to let DB generate it.
+          // Assuming existing items have valid UUIDs from fetch.
+          const isNew = item.id.startsWith('w-') || item.id.length < 20;
+
+          const payload: any = {
+            student_id: studentUuid,
+            subject: item.subject,
+            title: item.title,
+            score: item.score,
+            max_score: item.maxScore,
+            status: item.status,
+            note: item.note,
+            date: item.date
+          };
+
+          if (!isNew) {
+            payload.id = item.id;
+          }
+
+          promises.push(supabase.from('assessments').upsert(payload));
+        }
+      }
+
+      // Update Monthly Exams
+      if (data.monthlyExams) {
+        for (const item of data.monthlyExams) {
+          const isNew = item.id.startsWith('m') || item.id.length < 20;
+          const payload: any = {
+            student_id: studentUuid,
+            subject: item.subject,
+            score: item.score,
+            max_score: item.maxScore,
+            status: item.status,
+            note: item.note,
+            date: item.date
+          };
+          if (!isNew) payload.id = item.id;
+          promises.push(supabase.from('monthly_exams').upsert(payload));
+        }
+      }
+
+      // Update Attendance
+      if (data.attendanceRecords) {
+        for (const item of data.attendanceRecords) {
+          const isNew = item.id.startsWith('a') || item.id.length < 20;
+          const payload: any = {
+            student_id: studentUuid,
+            date: item.date,
+            status: item.status,
+            lesson_name: item.lessonName,
+            note: item.note,
+            late_time: item.lateTime
+          };
+          if (!isNew) payload.id = item.id;
+          promises.push(supabase.from('attendance_records').upsert(payload));
+        }
+      }
+
+      // Update Announcements
+      // Note: Announcements are usually global, but if we are "updating a student's announcements", 
+      // it might mean we are creating a targeted announcement? 
+      // For now, let's assume we are just updating the student table itself if name/grade changed.
+      if (data.name || data.grade) {
+        promises.push(supabase.from('students').update({
+          name: data.name,
+          grade: data.grade
+        }).eq('id', studentUuid));
+      }
+
+      await Promise.all(promises);
+
+      // Refresh local state
+      await fetchData();
+      triggerToast("تم حفظ التغييرات بنجاح", 'success');
+
+    } catch (err: any) {
+      console.error("Update failed:", err);
+      triggerToast(`فشل الحفظ: ${err.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [students, fetchData]);
+
+  const handleDeleteStudent = useCallback(async (nationalId: string) => {
+    const student = students.find(s => s.id === nationalId);
+    if (!student || !student._uuid) return;
+
+    if (!window.confirm("هل أنت متأكد من حذف هذا الطالب؟ لا يمكن التراجع عن هذا الإجراء.")) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('students').delete().eq('id', student._uuid);
       if (error) throw error;
+
+      await fetchData();
       triggerToast("تم حذف سجل الطالب بنجاح", 'info');
-    } catch (err) {
-      console.error(err);
-      triggerToast("فشل الحذف", 'error');
-      fetchStudents();
+    } catch (err: any) {
+      console.error("Delete failed:", err);
+      triggerToast(`فشل الحذف: ${err.message}`, 'error');
+    } finally {
+      setLoading(false);
     }
-  }, [fetchStudents]);
+  }, [students, fetchData]);
 
   const handleBulkUpdate = useCallback(async (updates: { id: string, data: Partial<StudentData> }[]) => {
-    // Complex to do bulk updates in one go without a custom RPC or looping
-    // For demo, we loop (not efficient but checking logic)
-    for (const update of updates) {
-      await handleUpdateStudent(update.id, update.data);
+    setLoading(true);
+    try {
+      for (const update of updates) {
+        await handleUpdateStudent(update.id, update.data);
+      }
+    } finally {
+      setLoading(false);
     }
   }, [handleUpdateStudent]);
 
@@ -201,43 +514,46 @@ export default function App() {
     setCurrentView('login');
   };
 
-  const handleStudentLoginSuccess = (nationalId: string) => {
-    // In our new schema, we check by national_id
-    // The Login page usually passes the ID entered.
-    const exists = students.find(s => s.national_id === nationalId);
+  const handleStudentLoginSuccess = async (nationalId: string) => {
+    const exists = students.find(s => s.id === nationalId);
     if (exists) {
-      setCurrentStudentId(exists.id);
+      setCurrentStudentId(nationalId);
       triggerToast(`مرحباً بك، ${exists.name}! أنت في ${exists.grade}`, 'info');
+      setCurrentView('dashboard');
     } else {
-      triggerToast(`عذراً، هذا الرقم القومي غير مسجل.`, 'error');
-      // Ensure we stay on login or handle error
-      return;
-    }
-    setCurrentView('dashboard');
-  };
+      // Create new student in DB
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.from('students').insert([{
+          national_id: nationalId,
+          name: "طالب جديد",
+          grade: "الاول الإعدادي"
+        }]).select();
 
-  // Create New Student (Teacher Action usually, but logic here for now)
-  const createStudent = async (nationalId: string, name: string, grade: string) => {
-    try {
-      const { data, error } = await supabase.from('students').insert({
-        national_id: nationalId,
-        name,
-        grade
-      }).select().single();
+        if (error) throw error;
 
-      if (error) throw error;
-      if (data) {
-        await fetchStudents(); // Refresh
-        triggerToast('تم إضافة الطالب بنجاح', 'success');
-        return data.id;
+        await fetchData();
+        setCurrentStudentId(nationalId);
+        triggerToast(`مرحباً بك! تم إنشاء ملف جديد.`, 'info');
+        setCurrentView('dashboard');
+      } catch (err: any) {
+        console.error("Login creation failed:", err);
+        triggerToast("حدث خطأ أثناء إنشاء الحساب", 'error');
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      triggerToast(`فشل الإضافة: ${err.message}`, 'error');
     }
-    return null;
   };
 
+  const handleTeacherLoginClick = () => {
+    setCurrentView('teacher-login');
+  };
 
+  const handleTeacherLoginSuccess = (selectedSubject: string) => {
+    setTeacherSubject(selectedSubject);
+    setCurrentView('teacher-dashboard');
+    triggerToast(`مرحباً بك يا أستاذ مادة ${selectedSubject}`, 'info');
+  };
 
   const handleLogout = () => {
     // Logout to login page instead of landing
@@ -245,57 +561,80 @@ export default function App() {
     setCurrentStudentId(null);
   };
 
-  const currentStudent = students.find(s => s.id === currentStudentId) || null;
-
-
-
-
+  const currentStudent = students.find(s => s.id === currentStudentId) || students[0];
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans relative text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-950 transition-colors duration-300`}>
+    <div className={`min-h-screen flex flex-col font-sans relative text-slate-900 dark:text-slate-100`}>
 
       <DynamicBackground isDarkMode={isDarkMode} />
 
       <Header
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
-        isLoggedIn={currentView === 'dashboard'}
-        onLogout={() => setCurrentView('landing')}
+        isLoggedIn={currentView === 'dashboard' || currentView === 'teacher-dashboard'}
+        onLogout={handleLogout}
       />
 
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-
-      <main className="flex-grow flex flex-col relative isolate justify-center">
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-6 py-6 flex-grow flex flex-col justify-center">
-          {loading && <div className="fixed inset-0 bg-white/50 z-50 flex items-center justify-center"><Loader2 className="animate-spin" /></div>}
-          {currentView === 'landing' && (
-            <Hero onLogin={() => setCurrentView('login')} />
-          )}
+      <main className="flex-grow flex flex-col relative isolate">
+        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-6 py-6 md:py-8 flex-grow flex flex-col">
+          {currentView === 'landing' && <Hero onLogin={handleStartJourney} onTeacherLogin={handleTeacherLoginClick} />}
 
           {currentView === 'login' && (
             <LoginPage
               onLoginSuccess={handleStudentLoginSuccess}
+
               onBack={() => setCurrentView('landing')}
             />
           )}
 
+          {currentView === 'teacher-login' && (
+            <TeacherLoginPage
+              onLoginSuccess={handleTeacherLoginSuccess}
+              onBackToStudent={() => setCurrentView('login')}
+            />
+          )}
 
-
-          {currentView === 'dashboard' && currentStudent && (
+          {currentView === 'dashboard' && (
             <StudentDashboard
               student={currentStudent}
               onLogout={handleLogout}
             />
           )}
 
-
+          {currentView === 'teacher-dashboard' && (
+            <TeacherDashboard
+              students={students}
+              teacherSubject={teacherSubject}
+              onUpdateStudent={handleUpdateStudent}
+              onBulkUpdate={handleBulkUpdate}
+              onDeleteStudent={handleDeleteStudent}
+              onLogout={handleLogout}
+              triggerToast={triggerToast}
+              undo={undo}
+              redo={redo}
+              canUndo={historyIndex > 0}
+              canRedo={historyIndex < history.length - 1}
+            />
+          )}
         </div>
       </main>
 
 
 
       <Footer />
+
+      {/* Global Loader Overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-[200] bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+            <p className="text-slate-600 dark:text-slate-300 font-medium">جاري الاتصال بقاعدة البيانات...</p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

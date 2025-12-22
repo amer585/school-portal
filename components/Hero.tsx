@@ -3,9 +3,10 @@ import { Illustration } from './Illustration';
 
 interface HeroProps {
   onLogin: () => void;
+  onTeacherLogin: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onLogin }) => {
+export const Hero: React.FC<HeroProps> = ({ onLogin, onTeacherLogin }) => {
   return (
     <div className="flex flex-col-reverse lg:flex-row items-center justify-between gap-12 lg:gap-24 py-12 lg:py-20 animate-in fade-in duration-700">
 
@@ -24,6 +25,13 @@ export const Hero: React.FC<HeroProps> = ({ onLogin }) => {
           className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-4 px-10 rounded-2xl shadow-xl shadow-slate-300/20 dark:shadow-none hover:shadow-2xl transition-all transform hover:-translate-y-1 text-lg flex items-center justify-center gap-2"
         >
           الدخول إلى عرض التفاصيل
+        </button>
+
+        <button
+          onClick={onTeacherLogin}
+          className="mt-4 bg-transparent border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 px-8 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-base flex items-center justify-center gap-2"
+        >
+          بوابة المعلمين
         </button>
       </div>
 
