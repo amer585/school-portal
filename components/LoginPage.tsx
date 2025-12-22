@@ -30,17 +30,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBack }) 
         {/* Decorative top accent */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
 
-        {/* Back Button */}
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="absolute top-6 left-6 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
-            title="العودة"
-          >
-            <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
-          </button>
-        )}
-
         <div className="text-center mb-10 mt-4">
           <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-3">تسجيل الدخول</h2>
           <p className="text-slate-500 dark:text-slate-400 text-lg">أدخل الرقم القومي للطالب لعرض التفاصيل</p>
